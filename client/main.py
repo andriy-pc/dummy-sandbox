@@ -23,6 +23,12 @@ class MCPClient:
         if not server_script_path.endswith(".py"):
             raise ValueError("Server script must be a .py file")
 
+        """
+        Launching `server` as a subprocess (literally runs python <your_script.py> on your machine), 
+        because this is local/stdio transport mode — the MCP protocol communicates over stdin/stdout pipes between client and server.
+        For that to work, the client needs to own the subprocess so it can attach those pipes directly. 
+        If you launched the server yourself, the client would have no way to connect to its stdin/stdout.
+        """
         server_params = StdioServerParameters(
             command="python",
             args=[server_script_path],
