@@ -1,0 +1,11 @@
+# PowerShell
+# -v "%cd%":/app mounts your current directory, -w /app sets it as the working dir, then runs the tests directly without needing an interactive shell.
+docker run -it --rm -v "${PWD}:/app" -w /app node:24-alpine node tests.js
+
+
+# Git Bash
+docker run -it --rm -v "$(pwd):/app" -w /app node:24-alpine node tests.js
+
+
+# start local http server to debug the page
+python -m http.server 8080
