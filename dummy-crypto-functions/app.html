@@ -1,0 +1,511 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Currency Trading Calculator</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+</head>
+
+<body>
+
+  <!-- ─── Help modal ─────────────────────────────────────────────────────────── -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal" id="modal-inner">
+      <button class="modal-close" id="modal-close">✕</button>
+      <h3 class="modal-title" id="modal-title"></h3>
+      <p class="modal-body" id="modal-body"></p>
+    </div>
+  </div>
+
+  <div class="app">
+
+    <header class="header">
+      <div class="header-inner">
+        <div class="logo">
+          <span class="logo-icon">₿</span>
+          <span class="logo-text">Crypto Calc</span>
+        </div>
+        <div class="tabs">
+          <button class="tab tab--long active" id="tab-long">
+            <span class="tab-arrow">▲</span> Long
+          </button>
+          <button class="tab tab--short" id="tab-short">
+            <span class="tab-arrow">▼</span> Short
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="main">
+
+      <!-- ═══════════════════ LONG PANEL ═══════════════════ -->
+      <div class="panel" id="panel-long">
+
+        <!-- 0. Live PnL simulator -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Live PnL simulator</h2>
+            <span class="card-badge card-badge--long">Drag to simulate price</span>
+            <button class="help-btn" data-modal="slider-long">?</button>
+          </div>
+          <div class="field-grid field-grid--3">
+            <div class="field">
+              <label>Entry price ($)</label>
+              <input type="number" id="l-sim-entry" placeholder="e.g. 84000">
+            </div>
+            <div class="field">
+              <label>Leverage (x)</label>
+              <input type="number" id="l-sim-leverage" placeholder="e.g. 10" min="1" max="200" step="1">
+            </div>
+            <div class="field">
+              <label>Position size ($)</label>
+              <input type="number" id="l-sim-pos" placeholder="e.g. 4000">
+            </div>
+          </div>
+          <div class="field sim-actual-field">
+            <label>Actual position size</label>
+            <div class="readonly-field" id="l-sim-actual">—</div>
+          </div>
+          <div class="slider-wrap" id="l-slider-wrap">
+            <div class="slider-axis">
+              <span id="l-sim-low" class="sim-axis-label sim-axis-label--left"></span>
+              <span id="l-sim-high" class="sim-axis-label sim-axis-label--right"></span>
+            </div>
+            <div class="slider-track-outer">
+              <div class="slider-fill slider-fill--loss" id="l-fill-loss"></div>
+              <div class="slider-fill slider-fill--profit" id="l-fill-profit"></div>
+              <div class="slider-entry-tick" id="l-entry-tick"></div>
+              <div class="slider-liq-tick" id="l-liq-tick"></div>
+            </div>
+            <input type="range" class="sim-range sim-range--long" id="l-sim-range" min="0" max="1000" value="500" step="1">
+            <div class="sim-readout">
+              <div class="sim-price-row">
+                <span class="sim-price-label">Simulated price</span>
+                <span class="sim-price-val" id="l-sim-price-out">—</span>
+              </div>
+              <div class="metric-row sim-metric-row">
+                <div class="metric" id="l-sim-pnl-card">
+                  <div class="metric-label" id="l-sim-pnl-lbl">PnL</div>
+                  <div class="metric-value" id="l-sim-pnl">—</div>
+                  <div class="metric-sub" id="l-sim-pct"></div>
+                </div>
+                <div class="metric">
+                  <div class="metric-label">Price change</div>
+                  <div class="metric-value" id="l-sim-chg">—</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 1. Stop-loss -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Stop-loss</h2>
+            <span class="card-badge card-badge--long">Price must not fall</span>
+            <button class="help-btn" data-modal="stop-long">?</button>
+          </div>
+          <div class="field-grid field-grid--3">
+            <div class="field">
+              <label>Entry price ($)</label>
+              <input type="number" id="l-stop-entry" placeholder="e.g. 84000">
+            </div>
+            <div class="field">
+              <label>Leverage (x)</label>
+              <input type="number" id="l-stop-leverage" placeholder="e.g. 10" min="1" max="200" step="1">
+            </div>
+            <div class="field">
+              <label>Position size ($)</label>
+              <input type="number" id="l-stop-pos" placeholder="e.g. 4000">
+            </div>
+          </div>
+          <div class="field-grid field-grid--halves">
+            <div class="field">
+              <label>Stop loss (%)</label>
+              <input type="number" id="l-stop-sl" placeholder="e.g. 5" min="0.1" max="100" step="0.1">
+            </div>
+            <div class="field">
+              <label>Actual position size</label>
+              <div class="readonly-field" id="l-stop-actual">—</div>
+            </div>
+          </div>
+          <button class="btn btn--long" id="l-stop-btn">Calculate</button>
+          <div class="results" id="l-stop-results">
+            <div class="metric-row">
+              <div class="metric"><div class="metric-label">Stop-loss price</div><div class="metric-value" id="l-sr-price"></div></div>
+              <div class="metric"><div class="metric-label">Distance from entry</div><div class="metric-value" id="l-sr-dist"></div></div>
+              <div class="metric metric--loss"><div class="metric-label">Loss per Currency (leveraged)</div><div class="metric-value" id="l-sr-perCurrency"></div></div>
+              <div class="metric metric--loss"><div class="metric-label">Total loss</div><div class="metric-value" id="l-sr-total"></div><div class="metric-sub" id="l-sr-pct"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. PnL -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">PnL calculator</h2>
+            <span class="card-badge card-badge--long">Profit when price rises</span>
+            <button class="help-btn" data-modal="pnl-long">?</button>
+          </div>
+          <div class="field-grid field-grid--3">
+            <div class="field">
+              <label>Entry price ($)</label>
+              <input type="number" id="l-pnl-entry" placeholder="e.g. 84000">
+            </div>
+            <div class="field">
+              <label>Current price ($)</label>
+              <input type="number" id="l-pnl-current" placeholder="e.g. 90000">
+            </div>
+            <div class="field">
+              <label>Leverage (x)</label>
+              <input type="number" id="l-pnl-leverage" placeholder="e.g. 10" min="1" max="200" step="1">
+            </div>
+          </div>
+          <div class="field-grid field-grid--halves">
+            <div class="field">
+              <label>Position size ($)</label>
+              <input type="number" id="l-pnl-pos" placeholder="e.g. 4000">
+            </div>
+            <div class="field">
+              <label>Actual position size</label>
+              <div class="readonly-field" id="l-pnl-actual">—</div>
+            </div>
+          </div>
+          <button class="btn btn--long" id="l-pnl-btn">Calculate</button>
+          <div class="results" id="l-pnl-results">
+            <div class="metric-row">
+              <div class="metric"><div class="metric-label">Currency amount</div><div class="metric-value" id="l-pr-Currency"></div></div>
+              <div class="metric"><div class="metric-label">Actual position size</div><div class="metric-value" id="l-pr-possize"></div></div>
+              <div class="metric" id="l-pr-card"><div class="metric-label" id="l-pr-lbl">PnL</div><div class="metric-value" id="l-pr-pnl"></div><div class="metric-sub" id="l-pr-pct"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Movement % -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Movement %</h2>
+            <span class="card-badge card-badge--long">Entry vs current</span>
+            <button class="help-btn" data-modal="mvm">?</button>
+          </div>
+          <div class="field-grid field-grid--3">
+            <div class="field">
+              <label>Entry price ($)</label>
+              <input type="number" id="l-mvm-entry" placeholder="e.g. 84000">
+            </div>
+            <div class="field">
+              <label>Current price ($)</label>
+              <input type="number" id="l-mvm-current" placeholder="e.g. 90000">
+            </div>
+            <div class="field">
+              <label>Leverage (x)</label>
+              <input type="number" id="l-mvm-leverage" placeholder="e.g. 10" min="1" max="200" step="1">
+            </div>
+          </div>
+          <div class="field-grid field-grid--halves">
+            <div class="field">
+              <label>Position size ($)</label>
+              <input type="number" id="l-mvm-pos" placeholder="e.g. 4000">
+            </div>
+            <div class="field">
+              <label>Actual position size</label>
+              <div class="readonly-field" id="l-mvm-actual">—</div>
+            </div>
+          </div>
+          <button class="btn btn--long" id="l-mvm-btn">Calculate</button>
+          <div class="results" id="l-mvm-results">
+            <div class="metric-row">
+              <div class="metric"><div class="metric-label">Price movement</div><div class="metric-value" id="l-mr-pct"></div><div id="l-mr-badge"></div></div>
+              <div class="metric" id="l-mr-status-card"><div class="metric-label">Position status</div><div class="metric-value" id="l-mr-status"></div></div>
+              <div class="metric"><div class="metric-label">Actual movement (leveraged)</div><div class="metric-value" id="l-mr-lev"></div></div>
+            </div>
+            <div class="metric metric--liq-warn" id="l-mr-liq-warn">
+              <div class="metric-label">⚠ Liquidation warning</div>
+              <div class="metric-value" id="l-mr-liq-price"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Price range -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Price range</h2>
+            <span class="card-badge card-badge--long">Upper &amp; lower for % move</span>
+            <button class="help-btn" data-modal="range">?</button>
+          </div>
+          <div class="field-grid field-grid--3">
+            <div class="field">
+              <label>Entry price ($)</label>
+              <input type="number" id="l-pm-entry" placeholder="e.g. 84000">
+            </div>
+            <div class="field">
+              <label>Leverage (x)</label>
+              <input type="number" id="l-pm-leverage" placeholder="e.g. 10" min="1" max="200" step="1">
+            </div>
+            <div class="field">
+              <label>Position size ($)</label>
+              <input type="number" id="l-pm-pos" placeholder="e.g. 4000">
+            </div>
+          </div>
+          <div class="field-grid field-grid--halves">
+            <div class="field">
+              <label>Move percentage (%)</label>
+              <input type="number" id="l-pm-pct" placeholder="e.g. 5">
+            </div>
+            <div class="field">
+              <label>Actual position size</label>
+              <div class="readonly-field" id="l-pm-actual">—</div>
+            </div>
+          </div>
+          <button class="btn btn--long" id="l-pm-btn">Calculate</button>
+          <div class="results" id="l-pm-results">
+            <div class="metric-row">
+              <div class="metric metric--profit"><div class="metric-label">Upper target (+%)</div><div class="metric-value" id="l-pm-upper"></div></div>
+              <div class="metric"><div class="metric-label">Entry</div><div class="metric-value" id="l-pm-entry-out"></div></div>
+              <div class="metric metric--loss"><div class="metric-label">Lower target (−%)</div><div class="metric-value" id="l-pm-lower"></div></div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /panel-long -->
+
+      <!-- ═══════════════════ SHORT PANEL ══════════════════ -->
+      <div class="panel hidden" id="panel-short">
+
+        <!-- 0. Live PnL simulator -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Live PnL simulator</h2>
+            <span class="card-badge card-badge--short">Drag to simulate price</span>
+            <button class="help-btn" data-modal="slider-short">?</button>
+          </div>
+          <div class="field-grid field-grid--3">
+            <div class="field">
+              <label>Entry price ($)</label>
+              <input type="number" id="s-sim-entry" placeholder="e.g. 84000">
+            </div>
+            <div class="field">
+              <label>Leverage (x)</label>
+              <input type="number" id="s-sim-leverage" placeholder="e.g. 10" min="1" max="200" step="1">
+            </div>
+            <div class="field">
+              <label>Position size ($)</label>
+              <input type="number" id="s-sim-pos" placeholder="e.g. 4000">
+            </div>
+          </div>
+          <div class="field sim-actual-field">
+            <label>Actual position size</label>
+            <div class="readonly-field" id="s-sim-actual">—</div>
+          </div>
+          <div class="slider-wrap" id="s-slider-wrap">
+            <div class="slider-axis">
+              <span id="s-sim-low" class="sim-axis-label sim-axis-label--left"></span>
+              <span id="s-sim-high" class="sim-axis-label sim-axis-label--right"></span>
+            </div>
+            <div class="slider-track-outer">
+              <div class="slider-fill slider-fill--loss" id="s-fill-loss"></div>
+              <div class="slider-fill slider-fill--profit" id="s-fill-profit"></div>
+              <div class="slider-entry-tick" id="s-entry-tick"></div>
+              <div class="slider-liq-tick" id="s-liq-tick"></div>
+            </div>
+            <input type="range" class="sim-range sim-range--short" id="s-sim-range" min="0" max="1000" value="500" step="1">
+            <div class="sim-readout">
+              <div class="sim-price-row">
+                <span class="sim-price-label">Simulated price</span>
+                <span class="sim-price-val" id="s-sim-price-out">—</span>
+              </div>
+              <div class="metric-row sim-metric-row">
+                <div class="metric" id="s-sim-pnl-card">
+                  <div class="metric-label" id="s-sim-pnl-lbl">PnL</div>
+                  <div class="metric-value" id="s-sim-pnl">—</div>
+                  <div class="metric-sub" id="s-sim-pct"></div>
+                </div>
+                <div class="metric">
+                  <div class="metric-label">Price change</div>
+                  <div class="metric-value" id="s-sim-chg">—</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 1. Stop-loss -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Stop-loss</h2>
+            <span class="card-badge card-badge--short">Price must not rise</span>
+            <button class="help-btn" data-modal="stop-short">?</button>
+          </div>
+          <div class="field-grid field-grid--3">
+            <div class="field">
+              <label>Entry price ($)</label>
+              <input type="number" id="s-stop-entry" placeholder="e.g. 84000">
+            </div>
+            <div class="field">
+              <label>Leverage (x)</label>
+              <input type="number" id="s-stop-leverage" placeholder="e.g. 10" min="1" max="200" step="1">
+            </div>
+            <div class="field">
+              <label>Position size ($)</label>
+              <input type="number" id="s-stop-pos" placeholder="e.g. 4000">
+            </div>
+          </div>
+          <div class="field-grid field-grid--halves">
+            <div class="field">
+              <label>Stop loss (%)</label>
+              <input type="number" id="s-stop-sl" placeholder="e.g. 5" min="0.1" max="100" step="0.1">
+            </div>
+            <div class="field">
+              <label>Actual position size</label>
+              <div class="readonly-field" id="s-stop-actual">—</div>
+            </div>
+          </div>
+          <button class="btn btn--short" id="s-stop-btn">Calculate</button>
+          <div class="results" id="s-stop-results">
+            <div class="metric-row">
+              <div class="metric"><div class="metric-label">Stop-loss price</div><div class="metric-value" id="s-sr-price"></div></div>
+              <div class="metric"><div class="metric-label">Distance from entry</div><div class="metric-value" id="s-sr-dist"></div></div>
+              <div class="metric metric--loss"><div class="metric-label">Loss per Currency (leveraged)</div><div class="metric-value" id="s-sr-perCurrency"></div></div>
+              <div class="metric metric--loss"><div class="metric-label">Total loss</div><div class="metric-value" id="s-sr-total"></div><div class="metric-sub" id="s-sr-pct"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. PnL -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">PnL calculator</h2>
+            <span class="card-badge card-badge--short">Profit when price falls</span>
+            <button class="help-btn" data-modal="pnl-short">?</button>
+          </div>
+          <div class="field-grid field-grid--3">
+            <div class="field">
+              <label>Entry price ($)</label>
+              <input type="number" id="s-pnl-entry" placeholder="e.g. 84000">
+            </div>
+            <div class="field">
+              <label>Current price ($)</label>
+              <input type="number" id="s-pnl-current" placeholder="e.g. 78000">
+            </div>
+            <div class="field">
+              <label>Leverage (x)</label>
+              <input type="number" id="s-pnl-leverage" placeholder="e.g. 10" min="1" max="200" step="1">
+            </div>
+          </div>
+          <div class="field-grid field-grid--halves">
+            <div class="field">
+              <label>Position size ($)</label>
+              <input type="number" id="s-pnl-pos" placeholder="e.g. 4000">
+            </div>
+            <div class="field">
+              <label>Actual position size</label>
+              <div class="readonly-field" id="s-pnl-actual">—</div>
+            </div>
+          </div>
+          <button class="btn btn--short" id="s-pnl-btn">Calculate</button>
+          <div class="results" id="s-pnl-results">
+            <div class="metric-row">
+              <div class="metric"><div class="metric-label">Currency amount</div><div class="metric-value" id="s-pr-Currency"></div></div>
+              <div class="metric"><div class="metric-label">Actual position size</div><div class="metric-value" id="s-pr-possize"></div></div>
+              <div class="metric" id="s-pr-card"><div class="metric-label" id="s-pr-lbl">PnL</div><div class="metric-value" id="s-pr-pnl"></div><div class="metric-sub" id="s-pr-pct"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Movement % -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Movement %</h2>
+            <span class="card-badge card-badge--short">Entry vs current</span>
+            <button class="help-btn" data-modal="mvm">?</button>
+          </div>
+          <div class="field-grid field-grid--3">
+            <div class="field">
+              <label>Entry price ($)</label>
+              <input type="number" id="s-mvm-entry" placeholder="e.g. 84000">
+            </div>
+            <div class="field">
+              <label>Current price ($)</label>
+              <input type="number" id="s-mvm-current" placeholder="e.g. 78000">
+            </div>
+            <div class="field">
+              <label>Leverage (x)</label>
+              <input type="number" id="s-mvm-leverage" placeholder="e.g. 10" min="1" max="200" step="1">
+            </div>
+          </div>
+          <div class="field-grid field-grid--halves">
+            <div class="field">
+              <label>Position size ($)</label>
+              <input type="number" id="s-mvm-pos" placeholder="e.g. 4000">
+            </div>
+            <div class="field">
+              <label>Actual position size</label>
+              <div class="readonly-field" id="s-mvm-actual">—</div>
+            </div>
+          </div>
+          <button class="btn btn--short" id="s-mvm-btn">Calculate</button>
+          <div class="results" id="s-mvm-results">
+            <div class="metric-row">
+              <div class="metric"><div class="metric-label">Price movement</div><div class="metric-value" id="s-mr-pct"></div><div id="s-mr-badge"></div></div>
+              <div class="metric" id="s-mr-status-card"><div class="metric-label">Position status</div><div class="metric-value" id="s-mr-status"></div></div>
+              <div class="metric"><div class="metric-label">Actual movement (leveraged)</div><div class="metric-value" id="s-mr-lev"></div></div>
+            </div>
+            <div class="metric metric--liq-warn" id="s-mr-liq-warn">
+              <div class="metric-label">⚠ Liquidation warning</div>
+              <div class="metric-value" id="s-mr-liq-price"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Price range -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Price range</h2>
+            <span class="card-badge card-badge--short">Upper &amp; lower for % move</span>
+            <button class="help-btn" data-modal="range">?</button>
+          </div>
+          <div class="field-grid field-grid--3">
+            <div class="field">
+              <label>Entry price ($)</label>
+              <input type="number" id="s-pm-entry" placeholder="e.g. 84000">
+            </div>
+            <div class="field">
+              <label>Leverage (x)</label>
+              <input type="number" id="s-pm-leverage" placeholder="e.g. 10" min="1" max="200" step="1">
+            </div>
+            <div class="field">
+              <label>Position size ($)</label>
+              <input type="number" id="s-pm-pos" placeholder="e.g. 4000">
+            </div>
+          </div>
+          <div class="field-grid field-grid--halves">
+            <div class="field">
+              <label>Move percentage (%)</label>
+              <input type="number" id="s-pm-pct" placeholder="e.g. 5">
+            </div>
+            <div class="field">
+              <label>Actual position size</label>
+              <div class="readonly-field" id="s-pm-actual">—</div>
+            </div>
+          </div>
+          <button class="btn btn--short" id="s-pm-btn">Calculate</button>
+          <div class="results" id="s-pm-results">
+            <div class="metric-row">
+              <div class="metric metric--profit"><div class="metric-label">Upper target (+%)</div><div class="metric-value" id="s-pm-upper"></div></div>
+              <div class="metric"><div class="metric-label">Entry</div><div class="metric-value" id="s-pm-entry-out"></div></div>
+              <div class="metric metric--loss"><div class="metric-label">Lower target (−%)</div><div class="metric-value" id="s-pm-lower"></div></div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /panel-short -->
+
+    </main>
+  </div>
+
+</body>
+
+</html>

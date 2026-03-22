@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BTC Trading Calculator</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+</head>
+<body>
+
+<div class="auth-wrap">
+  <div class="auth-card">
+
+    <div class="auth-logo">
+      <div class="logo">
+        <span class="logo-icon">ƒ</span>
+        <span class="logo-text">Helper functions</span>
+      </div>
+    </div>
+
+    <form id="auth-form">
+      <div class="field">
+        <label for="auth-username">Username</label>
+        <input type="text" id="auth-username" autocomplete="username" placeholder="username">
+      </div>
+      <div class="field">
+        <label for="auth-password">Password</label>
+        <div class="input-wrap">
+          <input type="password" id="auth-password" autocomplete="current-password" placeholder="password">
+          <button type="button" id="auth-pw-toggle" class="pw-toggle" aria-label="Show password">&#9679;&#9679;&#9679;</button>
+        </div>
+      </div>
+      <button type="submit" id="auth-submit" class="btn btn--auth">Login</button>
+      <span class="auth-error" id="auth-error"></span>
+    </form>
+
+  </div>
+</div>
+
+<script src="auth.js"></script>
+</body>
+</html>
