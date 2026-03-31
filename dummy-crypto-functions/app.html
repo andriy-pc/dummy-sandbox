@@ -304,6 +304,68 @@
           </div>
         </div>
 
+        <!-- 6. Risk/Reward -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Risk/Reward</h2>
+            <span class="card-badge card-badge--long">Trade quality check</span>
+            <button class="help-btn" data-modal="rr-long">?</button>
+          </div>
+          <div class="field-grid field-grid--3">
+            <div class="field">
+              <label>Entry price ($)</label>
+              <input type="number" id="l-rr-entry" placeholder="e.g. 84000">
+            </div>
+            <div class="field">
+              <label>Leverage (x)</label>
+              <input type="number" id="l-rr-leverage" placeholder="e.g. 10" min="1" max="200" step="1"
+                oninput="updateActual('l-rr-leverage','l-rr-pos','l-rr-actual')">
+            </div>
+            <div class="field">
+              <label>Position size ($)</label>
+              <input type="number" id="l-rr-pos" placeholder="e.g. 4000"
+                oninput="updateActual('l-rr-leverage','l-rr-pos','l-rr-actual')">
+            </div>
+          </div>
+          <div class="field-grid field-grid--halves">
+            <div class="field">
+              <label>Take-profit price ($)</label>
+              <input type="number" id="l-rr-tp" placeholder="e.g. 92000">
+            </div>
+            <div class="field">
+              <label>Actual position size</label>
+              <div class="readonly-field" id="l-rr-actual">—</div>
+            </div>
+          </div>
+          <div class="field-grid field-grid--halves">
+            <div class="field">
+              <label>Stop-loss price ($)</label>
+              <input type="number" id="l-rr-sl" placeholder="e.g. 80000">
+            </div>
+          </div>
+          <button class="btn btn--long" onclick="calcRR('long')">Calculate</button>
+          <div class="results" id="l-rr-results">
+            <div class="metric-row">
+              <div class="metric metric--loss">
+                <div class="metric-label">Risk (USD)</div>
+                <div class="metric-value" id="l-rr-risk"></div>
+              </div>
+              <div class="metric metric--profit">
+                <div class="metric-label">Reward (USD)</div>
+                <div class="metric-value" id="l-rr-reward"></div>
+              </div>
+              <div class="metric">
+                <div class="metric-label">Ratio</div>
+                <div class="metric-value" id="l-rr-ratio"></div>
+              </div>
+              <div class="metric" id="l-rr-verdict-card">
+                <div class="metric-label">Verdict</div>
+                <div class="metric-value" id="l-rr-verdict"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div><!-- /panel-long -->
 
       <!-- ═══════════════════ SHORT PANEL ══════════════════ -->
@@ -564,6 +626,68 @@
                 <div class="metric-label">Must keep</div>
                 <div class="metric-value" id="s-dist-reserve-out"></div>
                 <div class="metric-sub" id="s-dist-res-pct"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 6. Risk/Reward -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Risk/Reward</h2>
+            <span class="card-badge card-badge--short">Trade quality check</span>
+            <button class="help-btn" data-modal="rr-short">?</button>
+          </div>
+          <div class="field-grid field-grid--3">
+            <div class="field">
+              <label>Entry price ($)</label>
+              <input type="number" id="s-rr-entry" placeholder="e.g. 84000">
+            </div>
+            <div class="field">
+              <label>Leverage (x)</label>
+              <input type="number" id="s-rr-leverage" placeholder="e.g. 10" min="1" max="200" step="1"
+                oninput="updateActual('s-rr-leverage','s-rr-pos','s-rr-actual')">
+            </div>
+            <div class="field">
+              <label>Position size ($)</label>
+              <input type="number" id="s-rr-pos" placeholder="e.g. 4000"
+                oninput="updateActual('s-rr-leverage','s-rr-pos','s-rr-actual')">
+            </div>
+          </div>
+          <div class="field-grid field-grid--halves">
+            <div class="field">
+              <label>Take-profit price ($)</label>
+              <input type="number" id="s-rr-tp" placeholder="e.g. 76000">
+            </div>
+            <div class="field">
+              <label>Actual position size</label>
+              <div class="readonly-field" id="s-rr-actual">—</div>
+            </div>
+          </div>
+          <div class="field-grid field-grid--halves">
+            <div class="field">
+              <label>Stop-loss price ($)</label>
+              <input type="number" id="s-rr-sl" placeholder="e.g. 88000">
+            </div>
+          </div>
+          <button class="btn btn--short" onclick="calcRR('short')">Calculate</button>
+          <div class="results" id="s-rr-results">
+            <div class="metric-row">
+              <div class="metric metric--loss">
+                <div class="metric-label">Risk (USD)</div>
+                <div class="metric-value" id="s-rr-risk"></div>
+              </div>
+              <div class="metric metric--profit">
+                <div class="metric-label">Reward (USD)</div>
+                <div class="metric-value" id="s-rr-reward"></div>
+              </div>
+              <div class="metric">
+                <div class="metric-label">Ratio</div>
+                <div class="metric-value" id="s-rr-ratio"></div>
+              </div>
+              <div class="metric" id="s-rr-verdict-card">
+                <div class="metric-label">Verdict</div>
+                <div class="metric-value" id="s-rr-verdict"></div>
               </div>
             </div>
           </div>

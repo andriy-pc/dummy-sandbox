@@ -70,6 +70,14 @@ const HELP_CONTENT = {
   'dist-short': {
     title: 'Position Distribution Calculator — Short',
     body:  'Enter your total cross futures account balance and the amount you want to keep in reserve. The calculator shows how much you can safely deploy into positions (spendable) and how much must stay as a liquidation buffer (reserve), displayed in USD and as percentages of your total balance.'
+  },
+  'rr-long': {
+    title: 'Risk/Reward Calculator — Long',
+    body:  'Evaluates whether a long trade is worth opening. Enter your entry price, take-profit price, and stop-loss price to see the dollar risk, dollar reward, and the resulting ratio. A verdict label tells you at a glance whether the setup is poor, acceptable, good, or excellent.'
+  },
+  'rr-short': {
+    title: 'Risk/Reward Calculator — Short',
+    body:  'Evaluates whether a short trade is worth opening. Enter your entry price, take-profit price, and stop-loss price to see the dollar risk, dollar reward, and the resulting ratio. A verdict label tells you at a glance whether the setup is poor, acceptable, good, or excellent.'
   }
 };
 
@@ -409,6 +417,134 @@ function calcDist(type) {
   $(p + '-dist-reserve-card').classList.add('metric--neutral');
 
   showResults(p + '-dist-results');
+}
+
+/* ─── 8. Risk/reward calculator ─────────────────────────────────────────── */
+
+/**
+ * Dollar risk: absolute price distance from entry to stop,
+ * scaled by leveraged position size.
+ * @param {number} entryPrice
+ * @param {number} stopPrice
+ * @param {number} positionSize - collateral in USD
+ * @param {number} leverage
+ * @returns {number}
+ */
+function rrRisk(entryPrice, stopPrice, positionSize, leverage) {
+  return (Math.abs(entryPrice - stopPrice) / entryPrice) * positionSize * leverage;
+}
+
+/**
+ * Dollar reward: absolute price distance from entry to take-profit,
+ * scaled by leveraged position size.
+ * @param {number} entryPrice
+ * @param {number} takeProfitPrice
+ * @param {number} positionSize
+ * @param {number} leverage
+ * @returns {number}
+ */
+function rrReward(entryPrice, takeProfitPrice, positionSize, leverage) {
+  return (Math.abs(entryPrice - takeProfitPrice) / entryPrice) * positionSize * leverage;
+}
+
+/**
+ * Risk/reward ratio as a plain number (reward ÷ risk).
+ * Returns null when risk is zero to signal a divide-by-zero condition.
+ * @param {number} reward
+ * @param {number} risk
+ * @returns {number|null}
+ */
+function rrRatio(reward, risk) {
+  if (risk === 0) return null;
+  return reward / risk;
+}
+
+/**
+ * Plain-language verdict for a given ratio value.
+ * @param {number} ratio
+ * @returns {string}
+ */
+function rrVerdict(ratio) {
+  if (ratio < 1.0) return 'Poor \u2014 risk outweighs reward';
+  if (ratio < 1.5) return 'Acceptable';
+  if (ratio < 2.0) return 'Good';
+  return 'Excellent';
+}
+
+/**
+ * Reads inputs, validates direction, calls pure helpers, writes results.
+ * @param {'long'|'short'} type
+ */
+function calcRR(type) {
+  const p      = type[0];
+  const entry  = parseFloat($(p + '-rr-entry').value);
+  const tp     = parseFloat($(p + '-rr-tp').value);
+  const sl     = parseFloat($(p + '-rr-sl').value);
+  const leverage = parseFloat($(p + '-rr-leverage').value) || 10;
+  const pos    = parseFloat($(p + '-rr-pos').value) || 4000;
+
+  if (!entry || entry <= 0) {
+    alert('Please enter a valid entry price.');
+    return;
+  }
+  if (!tp || tp <= 0) {
+    alert('Please enter a valid take-profit price.');
+    return;
+  }
+  if (!sl || sl <= 0) {
+    alert('Please enter a valid stop-loss price.');
+    return;
+  }
+
+  if (type === 'long') {
+    if (tp <= entry) {
+      alert('Take-profit must be above the entry price for a long position.');
+      return;
+    }
+    if (sl >= entry) {
+      alert('Stop-loss must be below the entry price for a long position.');
+      return;
+    }
+  } else {
+    if (tp >= entry) {
+      alert('Take-profit must be below the entry price for a short position.');
+      return;
+    }
+    if (sl <= entry) {
+      alert('Stop-loss must be above the entry price for a short position.');
+      return;
+    }
+  }
+
+  updateActual(p + '-rr-leverage', p + '-rr-pos', p + '-rr-actual');
+
+  const risk   = rrRisk(entry, sl, pos, leverage);
+  const reward = rrReward(entry, tp, pos, leverage);
+  const ratio  = rrRatio(reward, risk);
+
+  if (ratio === null) {
+    alert('Stop-loss price equals entry price — risk is zero, cannot compute ratio.');
+    return;
+  }
+
+  const verdict    = rrVerdict(ratio);
+  const verdictEl  = $(p + '-rr-verdict-card');
+
+  verdictEl.classList.remove('metric--loss', 'metric--neutral', 'metric--profit');
+  if (ratio < 1.0) {
+    verdictEl.classList.add('metric--loss');
+  } else if (ratio < 1.5) {
+    verdictEl.classList.add('metric--neutral');
+  } else {
+    verdictEl.classList.add('metric--profit');
+  }
+
+  $(p + '-rr-risk').textContent    = fmt(risk);
+  $(p + '-rr-reward').textContent  = fmt(reward);
+  $(p + '-rr-ratio').textContent   = '1 : ' + ratio.toFixed(2);
+  $(p + '-rr-verdict').textContent = verdict;
+
+  showResults(p + '-rr-results');
 }
 
 /* ─── Event binding ──────────────────────────────────────────────────────── */

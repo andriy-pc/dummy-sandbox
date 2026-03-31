@@ -327,6 +327,63 @@ test('rounds to two decimal places', () => {
   assert.equal(distReservePct(2, 3), 66.67);
 });
 
+/* ─── Risk/reward calculator ────────────────────────────────────────────── */
+
+function rrRisk(entryPrice, stopPrice, positionSize, leverage) {
+  return (Math.abs(entryPrice - stopPrice) / entryPrice) * positionSize * leverage;
+}
+
+function rrReward(entryPrice, takeProfitPrice, positionSize, leverage) {
+  return (Math.abs(entryPrice - takeProfitPrice) / entryPrice) * positionSize * leverage;
+}
+
+function rrRatio(reward, risk) {
+  if (risk === 0) return null;
+  return reward / risk;
+}
+
+function rrVerdict(ratio) {
+  if (ratio < 1.0) return 'Poor \u2014 risk outweighs reward';
+  if (ratio < 1.5) return 'Acceptable';
+  if (ratio < 2.0) return 'Good';
+  return 'Excellent';
+}
+
+suite('rrRisk');
+test('typical long: 5% stop distance',          () => assertClose(rrRisk(50000, 47500, 4000, 10), 2000));
+test('typical short: stop above entry',         () => assertClose(rrRisk(50000, 52500, 4000, 10), 2000));
+test('zero stop distance → 0',                  () => assertClose(rrRisk(50000, 50000, 4000, 10), 0));
+test('scales linearly with leverage',           () => assertClose(rrRisk(50000, 47500, 4000, 20), rrRisk(50000, 47500, 4000, 10) * 2));
+test('scales linearly with position size',      () => assertClose(rrRisk(50000, 47500, 8000, 10), rrRisk(50000, 47500, 4000, 10) * 2));
+
+suite('rrReward');
+test('typical long: 10% tp distance',           () => assertClose(rrReward(50000, 55000, 4000, 10), 4000));
+test('typical short: tp below entry',           () => assertClose(rrReward(50000, 45000, 4000, 10), 4000));
+test('zero tp distance → 0',                    () => assertClose(rrReward(50000, 50000, 4000, 10), 0));
+test('scales linearly with leverage',           () => assertClose(rrReward(50000, 55000, 4000, 20), rrReward(50000, 55000, 4000, 10) * 2));
+test('scales linearly with position size',      () => assertClose(rrReward(50000, 55000, 8000, 10), rrReward(50000, 55000, 4000, 10) * 2));
+
+suite('rrRatio');
+test('typical ratio: reward 4000, risk 2000 → 2', () => assertClose(rrRatio(4000, 2000), 2));
+test('risk = 0 → null',                            () => assert.equal(rrRatio(4000, 0), null));
+test('reward = 0 → 0',                             () => assertClose(rrRatio(0, 2000), 0));
+test('equal reward and risk → 1',                  () => assertClose(rrRatio(3000, 3000), 1));
+test('scale-invariance: reward×k / risk×k = same', () => {
+  const base = rrRatio(4000, 2000);
+  assertClose(rrRatio(4000 * 7, 2000 * 7), base);
+  assertClose(rrRatio(4000 * 0.5, 2000 * 0.5), base);
+});
+
+suite('rrVerdict');
+test('ratio 0.5 → poor',                        () => assert.equal(rrVerdict(0.5),  'Poor \u2014 risk outweighs reward'));
+test('ratio 0.99 → poor',                       () => assert.equal(rrVerdict(0.99), 'Poor \u2014 risk outweighs reward'));
+test('ratio 1.0 → acceptable',                  () => assert.equal(rrVerdict(1.0),  'Acceptable'));
+test('ratio 1.49 → acceptable',                 () => assert.equal(rrVerdict(1.49), 'Acceptable'));
+test('ratio 1.5 → good',                        () => assert.equal(rrVerdict(1.5),  'Good'));
+test('ratio 1.99 → good',                       () => assert.equal(rrVerdict(1.99), 'Good'));
+test('ratio 2.0 → excellent',                   () => assert.equal(rrVerdict(2.0),  'Excellent'));
+test('ratio 5.0 → excellent',                   () => assert.equal(rrVerdict(5.0),  'Excellent'));
+
 /* ─── Summary ────────────────────────────────────────────────────────────── */
 
 console.log(`\n${passed + failed} tests: ${passed} passed, ${failed} failed`);
